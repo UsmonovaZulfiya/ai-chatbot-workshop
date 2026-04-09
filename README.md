@@ -6,7 +6,7 @@ During the workshop, we built a simple AI chatbot backend step by step using a L
 
 ---
 
-## 📌 What students learnt
+## 📌 Workshop objectives
 
 - How AI chatbots work (high-level architecture)
 - How to send requests to an LLM (Gemini)
@@ -31,7 +31,8 @@ During the workshop, we built a simple AI chatbot backend step by step using a L
     ├── loader.py # used to load the documents into Pinecone database
     ├── requirements.txt # need to be installed via pip within a virtual environment before running app.py
     ├── tiue_en_pages.json # document that has been loaded to the Pinecone database
-    ├── utilities.py # contains practically better example prompt 
+    ├── utilities.py # contains practically better example prompt
+    ├── RAG_notebook.ipynb # inspiration notebook that I found at https://github.com/AlaGrine/RAG_chatabot_with_Langchain
 ├── .env # keep your api keys here
 └── README.md
 ```
