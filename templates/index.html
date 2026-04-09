@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TIUE Website Assistant</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        --tiue-header: #123b7a;
+        --tiue-header-text: #ffffff;
+
+        --tiue-chat-bg: #f5f7fb;
+        --tiue-page-bg: #eef2f8;
+
+        --tiue-bot-bubble: #ffffff;
+        --tiue-bot-text: #1f2d3d;
+
+        --tiue-user-bubble: #dbe8ff;
+        --tiue-user-text: #123b7a;
+
+        --tiue-border: #d7dfeb;
+
+        --tiue-input-bg: #ffffff;
+        --tiue-input-border: #cfd8e3;
+
+        --tiue-send-bg: #123b7a;
+        --tiue-send-text: #ffffff;
+        --tiue-send-bg-hover: #1b4fa3;
+
+        --tiue-link: #123b7a;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--tiue-page-bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        padding: 12px;
+      }
+
+      .chat-container {
+        width: min(430px, 95vw);
+        height: min(680px, 92vh);
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--tiue-border);
+      }
+
+      .chat-header {
+        background-color: var(--tiue-header);
+        color: var(--tiue-header-text);
+        padding: 16px 18px 14px;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        flex: 0 0 auto;
+      }
+
+      .chat-header h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+
+      .chat-header p {
+        margin: 6px 0 0;
+        font-size: 12px;
+        opacity: 0.92;
+      }
+
+      .chat-messages {
+        flex: 1 1 auto;
+        padding: 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--tiue-chat-bg);
+      }
+
+      .message {
+        max-width: 84%;
+        padding: 11px 15px;
+        border-radius: 12px;
+        line-height: 1.45;
+        font-size: 14px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        scroll-margin-top: 10px;
+      }
+
+      .user-message {
+        align-self: flex-end;
+        background-color: var(--tiue-user-bubble);
+        color: var(--tiue-user-text);
+        border-bottom-right-radius: 3px;
+      }
+
+      .bot-message {
+        align-self: flex-start;
+        background-color: var(--tiue-bot-bubble);
+        color: var(--tiue-bot-text);
+        border-bottom-left-radius: 3px;
+      }
+
+      .sources-container {
+        font-size: 11px;
+        margin-top: 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        padding-top: 6px;
+        color: rgba(0, 0, 0, 0.7);
+      }
+
+      .source-link {
+        display: block;
+        color: var(--tiue-link);
+        text-decoration: none;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .source-link:hover {
+        text-decoration: underline;
+      }
+
+      .chat-input {
+        display: flex;
+        border-top: 1px solid var(--tiue-border);
+        padding: 10px;
+        background: var(--tiue-input-bg);
+        flex: 0 0 auto;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 11px 13px;
+        border: 1px solid var(--tiue-input-border);
+        border-radius: 22px;
+        outline: none;
+        min-width: 0;
+        background: #fff;
+        font-size: 14px;
+      }
+
+      .chat-input input:focus {
+        border-color: #9db7e5;
+        box-shadow: 0 0 0 3px rgba(18, 59, 122, 0.08);
+      }
+
+      .chat-input button {
+        margin-left: 10px;
+        padding: 10px;
+        background-color: var(--tiue-send-bg);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.15s ease;
+      }
+
+      .chat-input button:hover {
+        background-color: var(--tiue-send-bg-hover);
+      }
+
+      .chat-input button:disabled {
+        background-color: #b7c0cc;
+        cursor: not-allowed;
+      }
+
+      .chat-input button svg {
+        display: block;
+      }
+
+      .message p {
+        margin: 0.15em 0;
+      }
+
+      .message ul,
+      .message ol {
+        margin: 0.25em 0 0.25em 1.15em;
+        padding: 0;
+      }
+
+      .message li {
+        margin: 0.1em 0;
+      }
+
+      .message h1,
+      .message h2,
+      .message h3,
+      .message h4 {
+        margin: 0.25em 0 0.15em;
+        line-height: 1.2;
+      }
+
+      .message > :first-child {
+        margin-top: 0 !important;
+      }
+
+      .message > :last-child {
+        margin-bottom: 0 !important;
+      }
+
+      .message strong {
+        font-weight: 700;
+      }
+
+      .message em {
+        font-style: italic;
+      }
+
+      .message code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.1em 0.3em;
+        border-radius: 6px;
+      }
+
+      .message pre {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 10px;
+        border-radius: 10px;
+        overflow-x: auto;
+      }
+
+      .chat-footer-note {
+        text-align: center;
+        font-size: 11px;
+        color: #66758a;
+        padding: 8px 12px 10px;
+        background: #ffffff;
+        border-top: 1px solid rgba(0, 0, 0, 0.04);
+      }
+
+      @media (max-width: 520px) {
+        .chat-container {
+          width: 100%;
+          height: 100vh;
+          max-height: 100vh;
+          border-radius: 0;
+        }
+
+        body {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        <h1>TIUE Website Assistant</h1>
+        <p>Tashkent International University of Education</p>
+      </div>
+
+      <div class="chat-messages" id="messages">
+        <div class="message bot-message">
+          Hello! I am the TIUE website assistant. I can help you with information
+          available on the TIUE website, for example:
+          <ul>
+            <li>study programs</li>
+            <li>admissions and application-related information</li>
+            <li>tuition or general university information, if available</li>
+            <li>contacts and useful TIUE pages</li>
+          </ul>
+          What would you like to know?
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Type your question..."
+          onkeypress="handleEnter(event)"
+        />
+        <button onclick="sendMessage()" id="sendBtn" aria-label="Send message">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M16.2052 5.2648C17.861 4.71287 18.6891 4.43716 19.1261 4.87417C19.5629 5.31123 19.2874 6.13948 18.7355 7.79507L15.8976 16.3078C15.1133 18.6608 14.7208 19.8379 14.0002 19.838C13.2794 19.838 12.8871 18.661 12.1027 16.3078L11.3537 14.0597L15.7072 9.70718C16.0977 9.31671 16.0976 8.68365 15.7072 8.29312C15.3167 7.9026 14.6837 7.9026 14.2931 8.29312L9.93962 12.6466L7.69255 11.8976C5.3395 11.1133 4.16244 10.7208 4.16228 10.0001C4.16228 9.27939 5.33934 8.88709 7.69255 8.10269L16.2052 5.2648Z"
+              fill="white"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div class="chat-footer-note">
+        Answers are based on the available TIUE website content.
+      </div>
+    </div>
+
+    <script>
+      const messagesDiv = document.getElementById("messages");
+      const inputField = document.getElementById("userInput");
+      const sendBtn = document.getElementById("sendBtn");
+
+      let typingEl = null;
+      let sessionId = null;
+
+      function handleEnter(e) {
+        if (e.key === "Enter") sendMessage();
+      }
+
+      function showTyping() {
+        typingEl = document.createElement("div");
+        typingEl.classList.add("message", "bot-message");
+        typingEl.textContent = "Typing...";
+        messagesDiv.appendChild(typingEl);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function hideTyping() {
+        if (typingEl) typingEl.remove();
+        typingEl = null;
+      }
+
+      async function sendMessage() {
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        appendMessage(text, "user");
+        inputField.value = "";
+        inputField.disabled = true;
+        sendBtn.disabled = true;
+
+        showTyping();
+
+        try {
+          const requestBody = { message: text };
+          if (sessionId) {
+            requestBody.session_id = sessionId;
+          }
+
+          const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (response.status === 429) {
+            throw new Error("Too many requests. Please try again later.");
+          }
+
+          if (!response.ok) {
+            throw new Error("Connection error");
+          }
+
+          const data = await response.json();
+
+          if (data.session_id) {
+            sessionId = data.session_id;
+          }
+
+          hideTyping();
+          appendMessage(data.response || "No response received.", "bot", data.sources || []);
+        } catch (error) {
+          hideTyping();
+          appendMessage("Error: " + error.message, "bot");
+          console.error(error);
+        } finally {
+          inputField.disabled = false;
+          sendBtn.disabled = false;
+          inputField.focus();
+        }
+      }
+
+      marked.setOptions({
+        gfm: true,
+        breaks: true,
+        mangle: false,
+        headerIds: false,
+      });
+
+      function linkifyPlainUrls(text) {
+        text = text.replace(
+          /(^|[\s(])((https?:\/\/)[^\s<>)]+)(?=$|[\s)])/g,
+          "$1<$2>"
+        );
+
+        text = text.replace(
+          /(^|[\s(])((www\.)[^\s<>)]+)(?=$|[\s)])/g,
+          "$1<https://$2>"
+        );
+
+        return text;
+      }
+
+      function makeLinksSafe(container) {
+        const links = container.querySelectorAll("a");
+        links.forEach((a) => {
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+        });
+      }
+
+      function appendMessage(text, sender, sources = []) {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add(
+          "message",
+          sender === "user" ? "user-message" : "bot-message"
+        );
+
+        if (sender === "bot") {
+          const prepared = linkifyPlainUrls(text);
+          const html = marked.parse(prepared);
+          msgDiv.innerHTML = DOMPurify.sanitize(html);
+          makeLinksSafe(msgDiv);
+        } else {
+          msgDiv.textContent = text;
+        }
+
+        if (sources && sources.length > 0) {
+          const validSources = sources.filter(
+            (src) => src && src.url && src.url !== "#"
+          );
+
+          if (validSources.length > 0) {
+            const sourcesDiv = document.createElement("div");
+            sourcesDiv.classList.add("sources-container");
+
+            const title = document.createElement("strong");
+            title.textContent = "Sources:";
+            sourcesDiv.appendChild(title);
+
+            validSources.slice(0, 3).forEach((src, index) => {
+              const link = document.createElement("a");
+              link.href = src.url;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.classList.add("source-link");
+              link.textContent = `${index + 1}. ${src.title || src.url}`;
+              sourcesDiv.appendChild(link);
+            });
+
+            msgDiv.appendChild(sourcesDiv);
+          }
+        }
+
+        messagesDiv.appendChild(msgDiv);
+        msgDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    </script>
+  </body>
+</html>
